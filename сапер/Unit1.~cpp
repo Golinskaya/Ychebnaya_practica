@@ -40,7 +40,7 @@ __fastcall TForm1::TForm1(TComponent* Owner)
 
 void __fastcall TForm1::Button1Click(TObject *Sender)
 {
-    Degreeofdifficulty++;
+       Degreeofdifficulty++;
     if (Degreeofdifficulty>3)
       {
        Degreeofdifficulty=1;
@@ -50,21 +50,19 @@ void __fastcall TForm1::Button1Click(TObject *Sender)
           case 1: Button1->Caption="easy";break;
           case 2: Button1->Caption="normal";break;
           case 3: Button1->Caption="complicated";break;
-         }
+         } 
 }
 //---------------------------------------------------------------------------
-
-
 void __fastcall TForm1::Button2Click(TObject *Sender)
 {
-     Game_start();
+      Game_start();   
 }
 //---------------------------------------------------------------------------
 
 
-TForm1::Game_start()
+TForm1:: Game_start()
 {
-    Mines_plased=false;
+     Mines_plased=false;
     Coordinate_calculation();
     Playingfield->Width=(Latitude[Degreeofdifficulty]*Fieldlatitude)+1;
     Playingfield->Height=Playingfield->Width;
@@ -92,12 +90,12 @@ TForm1::Game_start()
     Playingfield->Visible=true;
     Game_isrunning=true;
     display->Caption=IntToStr(Numberofreplenishment[Degreeofdifficulty]);
-    return 0;
+    return 0;   
 }
 
 TForm1::Coordinate_calculation()
 {
-    for (byte a=1;a<(Max_Latitude+1);a++)
+   for (byte a=1;a<(Max_Latitude+1);a++)
                {
                   for (byte b=1;b<(Max_Latitude+1);b++)
                        {
@@ -110,20 +108,10 @@ TForm1::Coordinate_calculation()
        return 0;    
 }
 
-TForm1::Draw_field(byte x, byte y)
-{
-       Playingfield->Canvas->Pen->Color=clBlack;
-       Playingfield->Canvas->Brush->Color=clSilver;
-       Playingfield->Canvas->Rectangle(Field_X1[y][x]-1,Field_Y1[y][x]-1,Field_X2[y][x]+1,Field_Y2[y][x]+1);
-       Playingfield->Canvas->Pen->Color=clSilver;
-       Playingfield->Canvas->Rectangle(Field_X1[y][x],Field_Y1[y][x],Field_X2[y][x],Field_Y2[y][x]);
-       return 0;
-}
-
 
 TForm1::Field_read()
 {
-       POINT Mausposition;
+        POINT Mausposition;
        GetCursorPos(&Mausposition);
        int MausX=Mausposition.x-Form1->Left-Playingfield->Left;
        int MausY=Mausposition.y-Form1->Top-Playingfield->Top;
@@ -139,11 +127,12 @@ TForm1::Field_read()
                          Y=Latitude[Degreeofdifficulty];
                       }
             return 0;
-
 }
 void __fastcall TForm1::PlayingfieldClick(TObject *Sender)
 {
-     Field_read();
+     if (Game_isrunning==true)
+        {
+      Field_read();
      GetAsyncKeyState(VK_CONTROL);
      if (GetAsyncKeyState(VK_CONTROL)&& Open[Y][X]==false)
          {
@@ -162,7 +151,7 @@ void __fastcall TForm1::PlayingfieldClick(TObject *Sender)
                        Flag[Y][X]=false;
 
                     }
-
+           Kontrol();
 
          }
   else
@@ -174,30 +163,44 @@ void __fastcall TForm1::PlayingfieldClick(TObject *Sender)
               }
             if (Mine[Y][X]==true)
                     {
-
+                     Mines_reveal();
                     }
                else
                     {
                        if (Open[Y][X]==false)
                             {
-
+                               Uncover_field(X, Y);
+                               Kontrol();
                             }
 
                     }
-
+               }
          }
-
-
-
-
 
 }
 //---------------------------------------------------------------------------
 
 
+TForm1::Draw_field(byte x, byte y,byte Nummer)
+{
+        Playingfield->Canvas->Pen->Color=clBlack;
+       Playingfield->Canvas->Brush->Color=clSilver;
+       Playingfield->Canvas->Rectangle(Field_X1[y][x]-1,Field_Y1[y][x]-1,Field_X2[y][x]+1,Field_Y2[y][x]+1);
+       Playingfield->Canvas->Pen->Color=clSilver;
+       Playingfield->Canvas->Rectangle(Field_X1[y][x],Field_Y1[y][x],Field_X2[y][x],Field_Y2[y][x]);
+       if (Nummer>0)
+           {
+             Playingfield->Canvas->Pen->Color=clBlack;
+             TRect Number=Rect(Field_X1[y][x],Field_Y1[y][x],Field_X2[y][x],Field_Y2[y][x]);
+             Playingfield->Canvas->TextRect(Number,Field_X1[y][x]+4,Field_Y1[y][x],Nummer);
+           }
+       return 0;
+}
+
+
 TForm1::Flag_set(byte x, byte y, boolean set)
 {
-       Playingfield->Canvas->Pen->Color=clBlack;
+     Playingfield->Canvas->Pen->Color=clBlack;
        Playingfield->Canvas->Rectangle(Field_X1[y][x]-1,Field_Y1[y][x]-1,Field_X2[y][x]+1,Field_Y2[y][x]+1);
        if (set==true)
             {
@@ -216,22 +219,23 @@ TForm1::Flag_set(byte x, byte y, boolean set)
              return 0;
 }
 
+
 TForm1::Mine_distribution()
 {
-        Restmines=0;
+         Restmines=0;
         while (Restmines<(Numberofreplenishment[Degreeofdifficulty]))
                 {
                    byte x=(rand()%Latitude[Degreeofdifficulty])+1;
                    byte y=(rand()%Latitude[Degreeofdifficulty])+1;
 
-                   if(x<(X+2) && x<(X-2) && y<(Y+2) && y<(Y-2)){} else
+                   if(x<(X+2) && x>(X-2) && y<(Y+2) && y>(Y-2)){} else
                    {
 
                       if (Mine[y][x]==false)
                         {
                           for (byte a=(y-1);a<(y+2);a++)
                              {
-                                for (byte b=(y-1);b<(y+2);b++)
+                                for (byte b=(x-1);b<(x+2);b++)
                                     {
                                        Content[a][b]++;
 
@@ -244,14 +248,16 @@ TForm1::Mine_distribution()
                        Mine[y][x]=true;
                        Restmines++;
                       }
-                      }
 
+                   }
 
                 }
          return 0;
 }
 
-TForm1::Mines_open()
+
+
+TForm1::Mines_reveal()
 {
       Playingfield->Canvas->Brush->Color=clRed;
       Playingfield->Canvas->Pen->Color=clRed;
@@ -264,15 +270,78 @@ TForm1::Mines_open()
                        {
                          Playingfield->Canvas->Brush->Color=clBlack;
                          Playingfield->Canvas->Pen->Color=clBlack;
-                         Playingfield->Canvas->Ellipse(Field_X1[a][b]+2,Field_Y1[a][b]+2,Field_X2[a][b]+2,Field_Y2[a][b]+2);
+                         Playingfield->Canvas->Ellipse(Field_X1[a][b]+2,Field_Y1[a][b]+2,Field_X2[a][b]-2,Field_Y2[a][b]-2);
 
                        }
 
 
                   }
 
-          }
+           }
+
 
     Game_isrunning=false;
     return 0;
 }
+
+
+TForm1::Uncover_field(byte x, byte y)
+{
+       Open[y][x]=true;
+       if (Content[y][x]>0)
+          {
+            Draw_field(x, y, Content[y][x]);
+            if(Flag[y][x]==true)
+               {
+                 Flag[y][x]=false;
+               }
+          }
+    else
+          {
+            Draw_field(x, y, 0);
+             int x1=x-1;  if (x1<1) {x1=1;}
+             int x2=x+2;   if(x2>(Latitude[Degreeofdifficulty]+1)) {x2=Latitude[Degreeofdifficulty]+1;}
+             int y1=y-1;   if (y1<1) {y1=1;}
+             int y2=y+2;   if(y2>(Latitude[Degreeofdifficulty]+1)) {y2=Latitude[Degreeofdifficulty]+1;}
+             for (byte a=y1;a<y2;a++)
+                 {
+                    for (byte b=x1;b<x2;b++)
+                        {
+                          if (Open[a][b]==false && Flag[a][b]==false)
+                                 {
+                                   Uncover_field(b, a);
+                                 }
+                         }
+                 }
+          }
+    return 0;
+}
+
+TForm1::Kontrol()
+{
+       byte Counter=0;
+       Restmines= Numberofreplenishment[Degreeofdifficulty];
+      for (byte a=1;a<Latitude[Degreeofdifficulty]+1;a++)
+          {
+               for (byte b=1;b<Latitude[Degreeofdifficulty]+1;b++)
+                    {
+                      if(Flag[a][b]==true)
+                         {
+                            Restmines--;
+                           if(Mine[a][b]==true)
+                             {
+                               Counter++;
+                              }
+                         }
+                    }
+          }
+
+         display->Caption=IntToStr(Restmines);
+         if (Counter==Numberofreplenishment[Degreeofdifficulty])
+            {
+               Game_isrunning=false;
+               ShowMessage("Минное поле обезврежено");
+            }
+      return 0;
+}
+
